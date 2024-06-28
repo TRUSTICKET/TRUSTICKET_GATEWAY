@@ -1,0 +1,71 @@
+server:
+  port: 8000
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+
+jwt:
+  expiration_time: 86400000
+  secret: VlwEyVBsYt9V7zq57TejMnVUyzblYcfPQye08f7MGVA9XkHa
+
+
+spring:
+  application:
+    name: trusticket-gateway
+  cloud:
+    gateway:
+      routes:
+        # ????
+        - id : trusticket-core
+          uri : lb://TRUSTICKET-CORE
+          predicates:
+            - Path=/trusticket-core/api/v1/member/signup
+            - Method=POST
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/trusticket-core/(?<segment>.*), /$\{segment}  #user-service? ?? ??? URL ???? ???
+          # ???
+        - id : trusticket-core
+          uri : lb://TRUSTICKET-CORE
+          predicates:
+            - Path=/trusticket-core/api/v1/member/signin
+            - Method=POST
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/trusticket-core/(?<segment>.*), /$\{segment}
+
+          # Core-service
+        - id : trusticket-core
+          uri : lb://TRUSTICKET-CORE
+          predicates:
+            - Path=/trusticket-core/**
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/trusticket-core/(?<segment>.*), /$\{segment}
+            - AuthorizationHeaderFilter
+
+
+          # Content-service
+        - id : trusticket-content
+          uri : lb://TRUSTICKET-CONTENT
+          predicates:
+            - Path=/trusticket-content/**
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/trusticket-content/(?<segment>.*), /$\{segment}
+#            - AuthorizationHeaderFilter
+
+        # Booking-service
+        - id: trusticket-booking
+          uri: lb://TRUSTICKET-BOOKING
+          predicates:
+            - Path=/trusticket-booking/**
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/trusticket-booking/(?<segment>.*), /$\{segment}
+#            - AuthorizationHeaderFilter
+
+
